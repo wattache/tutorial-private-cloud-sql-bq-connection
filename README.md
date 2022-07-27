@@ -7,7 +7,7 @@ Instantiate a CloudSQL instance in a Private VPC and connect through BigQuery
 
 ## II - Setup
 
-In yoru GCP project, enable the following APIs :
+In your GCP project, enable the following APIs :
 
 | Name                                     | Google API Services                 |
 |------------------------------------------|-------------------------------------|
@@ -20,7 +20,7 @@ In yoru GCP project, enable the following APIs :
 
 Before starting, export a few environement variables to ease the further actions :
 ```sh
-export PROJECT_ID=cloud-sql-bq-demo-ef05
+export PROJECT_ID=<your Google Cloud project ID>
 export TERRAFORM_SA_NAME=terraform-deployer
 ```
 
@@ -39,7 +39,7 @@ gcloud iam service-accounts create ${TERRAFORM_SA_NAME} \
 From the console you should get the following succes message : 
 ```Created service account [terraform-deployer].```
 
-Now that you created your service account, create and download a key associated with it :
+Create and download a key associated with it :
 ```sh
 gcloud iam service-accounts keys create my-key.json \
     --iam-account="${TERRAFORM_SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
@@ -48,18 +48,18 @@ gcloud iam service-accounts keys create my-key.json \
 You should get the following prompt : 
 ```created key [***] of type [json] as [my-key.json] for [terraform-deployer@***.iam.gserviceaccount.com]```
 
-Now, export the so called ```GOOGLE_APPLICATION_CREDENTIALS``` environment variable to match your created key file :
+Export the so called ```GOOGLE_APPLICATION_CREDENTIALS``` environment variable to match your created key file :
 ```sh
 export GOOGLE_APPLICATION_CREDENTIALS=$(pwd)/my-key.json
 ```
 
-Make the Terraform service account Editor on the project (for convenience, it does not respect the least-priviledge principles) :
+For convenience purposes, make the Terraform service account Editor and Networks Admin on your project :
 ```sh
 gcloud projects add-iam-policy-binding ${PROJECT_ID} \
     --member="serviceAccount:${TERRAFORM_SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com" \
     --role="roles/editor"
 ```
-
+and 
 ```sh
 gcloud projects add-iam-policy-binding ${PROJECT_ID} \
     --member="serviceAccount:${TERRAFORM_SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com" \
