@@ -56,7 +56,8 @@ export GOOGLE_APPLICATION_CREDENTIALS=$(pwd)/my-key.json
 In order to conform to the least-priviledge principle, create a custom role containing the necessary permissions for Terraform to apply :
 :warning: ```You'll need the following role : roles/iam.roleAdmin``` :warning:
 ```sh
-gcloud iam roles create terraform_cloudsqlbq_role --project=${PROJECT_ID} --file=terraform_custom_role.yaml
+export ROLE_ID=cloudsqlbq_terraform_builder
+gcloud iam roles create ${ROLE_ID} --project=${PROJECT_ID} --file=terraform_custom_role.yaml
 ```
 
 You may get the following message, nothing serious, just keep it in mind :
@@ -68,17 +69,11 @@ Bind your custom role :
 ```sh
 gcloud projects add-iam-policy-binding ${PROJECT_ID} \
     --member="serviceAccount:${TERRAFORM_SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com" \
-    --role="projects/demosqlbq-b7b9/roles/terraform_cloudsqlbq_role"
+    --role="projects/${PROJECT_ID}/roles/${ROLE_ID}"
 ```
 
-The following role need to be bind also. Teh stacktrace associated with denied permissions did not provide accurate insights on what permission
-is missing. This still needs to be improved :
-
-```sh
-gcloud projects add-iam-policy-binding ${PROJECT_ID} \
-    --member="serviceAccount:${TERRAFORM_SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com" \
-    --role="roles/compute.networkAdmin"
-```
+The following role need to be bind also. The stacktrace associated with denied permissions did not provide accurate insights on what permission
+was missing. This still needs to be improved :
 
 ```sh
 gcloud projects add-iam-policy-binding ${PROJECT_ID} \
@@ -117,3 +112,7 @@ And apply your changes :
 terraform apply -var="project_id=${PROJECT_ID}" -auto-approve
 ```
 
+To destroy your platform :
+```sh
+terraform destroy -var="project_id=${PROJECT_ID}" -auto-approve
+```
