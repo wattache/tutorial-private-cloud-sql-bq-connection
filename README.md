@@ -7,7 +7,7 @@ Instantiate a CloudSQL instance in a Private VPC and connect through BigQuery
 
 ## II - Setup
 
-In yoru GCP project, enable the following APIs :
+In your GCP project, enable the following APIs :
 
 | Name                                     | Google API Services                 |
 |------------------------------------------|-------------------------------------|
@@ -16,11 +16,11 @@ In yoru GCP project, enable the following APIs :
 | Bigquery Connection API                  | bigqueryconnection.googleapis.com   |
 | Cloud Resource Manager API               | cloudresourcemanager.googleapis.com |
 | Service Networking API                   | servicenetworking.googleapis.com    |
-| CloudSQL API                             | sqladmin.googleapis.com             |
+| CloudSQL Admin API                       | sqladmin.googleapis.com             |
 
 Before starting, export a few environement variables to ease the further actions :
 ```sh
-export PROJECT_ID=cloud-sql-bq-demo-ef05
+export PROJECT_ID=<your Google Cloud project ID>
 export TERRAFORM_SA_NAME=terraform-deployer
 ```
 
@@ -39,7 +39,7 @@ gcloud iam service-accounts create ${TERRAFORM_SA_NAME} \
 From the console you should get the following succes message : 
 ```Created service account [terraform-deployer].```
 
-Now that you created your service account, create and download a key associated with it :
+Create and download a key associated with it :
 ```sh
 gcloud iam service-accounts keys create my-key.json \
     --iam-account="${TERRAFORM_SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
@@ -48,16 +48,37 @@ gcloud iam service-accounts keys create my-key.json \
 You should get the following prompt : 
 ```created key [***] of type [json] as [my-key.json] for [terraform-deployer@***.iam.gserviceaccount.com]```
 
-Now, export the so called ```GOOGLE_APPLICATION_CREDENTIALS``` environment variable to match your created key file :
+Export the so called ```GOOGLE_APPLICATION_CREDENTIALS``` environment variable to match your created key file :
 ```sh
 export GOOGLE_APPLICATION_CREDENTIALS=$(pwd)/my-key.json
 ```
 
-Make the Terraform service account Editor on the project (for convenience, it does not respect the least-priviledge principles) :
+In order to conform to the least-priviledge principle, create a custom role containing the necessary permissions for Terraform to apply :
+:warning: ```You'll need the following role : roles/iam.roleAdmin``` :warning:
+```sh
+export ROLE_ID=cloudsqlbq_terraform_builder
+gcloud iam roles create ${ROLE_ID} --project=${PROJECT_ID} --file=terraform_custom_role.yaml
+```
+
+You may get the following message, nothing serious, just keep it in mind :
+```sh
+Note: permissions [compute.subnetworks.get] are in 'TESTING' stage which means the functionality is not mature and they can go away in the future. This can break your workflows, so do not use them in production systems!
+```
+
+Bind your custom role :
 ```sh
 gcloud projects add-iam-policy-binding ${PROJECT_ID} \
     --member="serviceAccount:${TERRAFORM_SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com" \
-    --role="roles/editor"
+    --role="projects/${PROJECT_ID}/roles/${ROLE_ID}"
+```
+
+The following role need to be bind also. The stacktrace associated with denied permissions did not provide accurate insights on what permission
+was missing. This still needs to be improved :
+
+```sh
+gcloud projects add-iam-policy-binding ${PROJECT_ID} \
+    --member="serviceAccount:${TERRAFORM_SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com" \
+    --role="roles/cloudsql.admin"
 ```
 
 ```sh
@@ -65,6 +86,9 @@ gcloud projects add-iam-policy-binding ${PROJECT_ID} \
     --member="serviceAccount:${TERRAFORM_SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com" \
     --role="roles/servicenetworking.networksAdmin"
 ```
+
+:warning: This does not respect the least-priviledges principle. If you want to respect it, do not do these bindings, apply Terraform
+and add the required permissions to a custom role. Do not hesitate to open a PR to improve this. :warning:
 
 Initiate your ```terraform``` configuration :
 ```sh
@@ -88,3 +112,7 @@ And apply your changes :
 terraform apply -var="project_id=${PROJECT_ID}" -auto-approve
 ```
 
+To destroy your platform :
+```sh
+terraform destroy -var="project_id=${PROJECT_ID}" -auto-approve
+```

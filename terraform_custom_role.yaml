@@ -1,0 +1,25 @@
+title: "Terraform CloudSQL BigQuery role"
+description: "Custome role used to deploy CloudSQL connection with BigQuery Omni."
+stage: "ALPHA"
+includedPermissions:
+- bigquery.connections.create
+- bigquery.connections.get
+- bigquery.connections.delete
+- compute.firewalls.create
+- compute.firewalls.delete
+- compute.firewalls.get
+- compute.globalAddresses.createInternal
+- compute.globalAddresses.deleteInternal
+- compute.globalAddresses.get
+- compute.networks.create
+- compute.networks.delete
+- compute.networks.get
+- compute.networks.removePeering
+- compute.networks.updatePolicy
+- compute.networks.use
+- compute.subnetworks.create
+- compute.subnetworks.get
+- compute.subnetworks.delete
+- storage.buckets.create
+- storage.buckets.get
+- storage.buckets.delete
