@@ -1,0 +1,10 @@
+title: "Terraform CloudSQL BigQuery role"
+description: "Custome role used to deploy CloudSQL connection with BigQuery Omni."
+stage: "ALPHA"
+includedPermissions:
+- compute.firewalls.create
+- compute.globalAddresses.get
+- compute.networks.get
+- compute.subnetworks.get
+- storage.buckets.create
+- storage.buckets.get

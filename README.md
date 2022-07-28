@@ -16,7 +16,7 @@ In your GCP project, enable the following APIs :
 | Bigquery Connection API                  | bigqueryconnection.googleapis.com   |
 | Cloud Resource Manager API               | cloudresourcemanager.googleapis.com |
 | Service Networking API                   | servicenetworking.googleapis.com    |
-| CloudSQL API                             | sqladmin.googleapis.com             |
+| CloudSQL Admin API                       | sqladmin.googleapis.com             |
 
 Before starting, export a few environement variables to ease the further actions :
 ```sh
@@ -53,18 +53,47 @@ Export the so called ```GOOGLE_APPLICATION_CREDENTIALS``` environment variable t
 export GOOGLE_APPLICATION_CREDENTIALS=$(pwd)/my-key.json
 ```
 
-For convenience purposes, make the Terraform service account Editor and Networks Admin on your project :
+In order to conform to the least-priviledge principle, create a custom role containing the necessary permissions for Terraform to apply :
+:warning: ```You'll need the following role : roles/iam.roleAdmin``` :warning:
+```sh
+gcloud iam roles create terraform_cloudsqlbq_role --project=${PROJECT_ID} --file=terraform_custom_role.yaml
+```
+
+You may get the following message, nothing serious, just keep it in mind :
+```sh
+Note: permissions [compute.subnetworks.get] are in 'TESTING' stage which means the functionality is not mature and they can go away in the future. This can break your workflows, so do not use them in production systems!
+```
+
+Bind your custom role :
 ```sh
 gcloud projects add-iam-policy-binding ${PROJECT_ID} \
     --member="serviceAccount:${TERRAFORM_SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com" \
-    --role="roles/editor"
+    --role="projects/demosqlbq-b7b9/roles/terraform_cloudsqlbq_role"
 ```
-and 
+
+The following role need to be bind also. Teh stacktrace associated with denied permissions did not provide accurate insights on what permission
+is missing. This still needs to be improved :
+
+```sh
+gcloud projects add-iam-policy-binding ${PROJECT_ID} \
+    --member="serviceAccount:${TERRAFORM_SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com" \
+    --role="roles/compute.networkAdmin"
+```
+
+```sh
+gcloud projects add-iam-policy-binding ${PROJECT_ID} \
+    --member="serviceAccount:${TERRAFORM_SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com" \
+    --role="roles/cloudsql.admin"
+```
+
 ```sh
 gcloud projects add-iam-policy-binding ${PROJECT_ID} \
     --member="serviceAccount:${TERRAFORM_SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com" \
     --role="roles/servicenetworking.networksAdmin"
 ```
+
+:warning: This does not respect the least-priviledges principle. If you want to respect it, do not do these bindings, apply Terraform
+and add the required permissions to a custom role. Do not hesitate to open a PR to improve this. :warning:
 
 Initiate your ```terraform``` configuration :
 ```sh
